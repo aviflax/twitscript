@@ -26,38 +26,37 @@ exports.init = function(setupObj) {
 	*/
 
 	/* Store any usernames, etc that were passed in */
-	if(setupObj) process.mixin(this, setupObj);
-	
+	this.username = setupObj.username;
+	this.password = setupObj.password;
+	this.headers = setupObj.headers;
+	this.version = typeof setupObj.version === "undefined" ? 1 : setupObj.version;
 	this.authenticated = false;
 	this.opener = http.createClient(80, "api.twitter.com");
 	this.search_opener = http.createClient(80, "search.twitter.com");
-
-	if(!this.version) this.version = 1;
 	
-	this.headers = process.mixin({
+	this.headers = {
 	    'Accept': '*/*',
 		'Host': 'api.twitter.com',
 		'User-Agent': 'Twitscript Node.js Client'
-	}, setupObj.headers || {});
-
+	};
+	
+	/*	Quick patch to get around process.mixin() deprecation. This doesn't do a deep copy by any means,
+		but for a simple headers object it should be enough. At some point, this should be looked at again though... */
+	if(typeof setupObj.headers !== "undefined") {
+		for(var i in setupObj.headers) {
+			this.headers[i] = setupObj.headers[i];
+		}
+	}
+	
 	if(this.username !== null && this.password !== null) {
-		// Trust that what we got passed is correct; we'll verify it with a hit to verify_credentials.json
+		// Trust that what we got passed is correct; we can verify it with a hit to verify_credentials.json
 		this.authenticated = true;
 
-		var auth = base64.encode(this.username + ':' + this.password),
-			that = this;
+		var auth = base64.encode(this.username + ':' + this.password);
 		this.headers['Authorization'] = "Basic " + auth;
 
 		// Don't keep their password in memory...
-		this.password = "";
-		
-		this.makeRequest({
-			type: "GET",
-			url: "/account/verify_credentials.json",
-			callback: function(data) {
-				that.authenticated = true;
-			}
-		});
+		this.password = "";		
 	}
 }
 
@@ -80,19 +79,19 @@ exports.init.prototype = {
 				finalResp = "";
 
 			resp.setBodyEncoding("utf8");
-
+			
 			if(statusCode !== 200) return sys.puts("Request to " + fullURL + " failed with a " + statusCode + " error code.");
 
 			resp.addListener("data", function(chunk) {
 				finalResp += chunk;
 			});
 
-			resp.addListener("complete", function() {
+			resp.addListener("end", function() {
 				if(typeof reqObj.callback !== "undefined" && typeof reqObj.callback === "function") reqObj.callback(JSON.parse(finalResp));
 			});
 		});
 
-		return request.close();
+		return request.end();
 	},
 	
 	constructApiURL: function(base_url, params) {
@@ -103,6 +102,14 @@ exports.init.prototype = {
 		}
 		
 		return returnURL;
+	},
+
+	verifyCredentials: function(callbackfn) {
+		return this.makeRequest({
+			type: "GET",
+			url: "/account/verify_credentials.json",
+			callback: callbackfn
+		});
 	},
 
 	getPublicTimeline: function(callbackfn) {
@@ -1319,7 +1326,7 @@ exports.init.prototype = {
 		var apiURL = "/trends/current.json";
 		if(paramsObj.exclude) apiURL += "?exclude=" + paramsObj.exclude;
 		return this.makeRequest({
-			type: "SEARCH",
+			type: "GET",
 			url: apiURL,
 			callback: callbackfn
 		});
@@ -1339,7 +1346,7 @@ exports.init.prototype = {
 		if(paramsObj.exclude) apiURL += "&exclude=" + paramsObj.exclude;
 		
 		return this.makeRequest({
-			type: "SEARCH",
+			type: "GET",
 			url: apiURL,
 			callback: callbackfn
 		});
@@ -1359,7 +1366,7 @@ exports.init.prototype = {
 		if(paramsObj.exclude) apiURL += "&exclude=" + paramsObj.exclude;
 		
 		return this.makeRequest({
-			type: "SEARCH",
+			type: "GET",
 			url: apiURL,
 			callback: callbackfn
 		});

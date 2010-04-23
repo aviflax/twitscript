@@ -1,0 +1,10 @@
+{
+  "name": "Twitscript",
+  "description": "A non-blocking evented library to access the Twitter API with Server Side JS (Node.js)",
+  "version": "0.9.9",
+  "keywords": ["twitter", "social", "web", "api", "rest", "restful"],
+  "directories": {
+    "lib": "src"
+  },
+  "engines": { "node": ">= 0.1.20" }
+}

@@ -11,10 +11,7 @@ twitter.updateStatus({status: "I'm about to push this project up"}, function(dat
 	sys.puts("Sent?");
 }); */
 
-
-/*	twitscript.init fires an async call to Twitter to verify authentication, which this method requires.
-	This currently results in a race condition - it'll be fixed in later versions, but for now, watch the timing.
-*/
+/*	Yeeeaaahhh bulk user lookup API */
 twitter.bulkUserLookup({screen_names: ["ryanmcgrath", "enotionz"]}, function(data) {
 	sys.puts("Working?");
 	sys.puts(JSON.stringify(data));
